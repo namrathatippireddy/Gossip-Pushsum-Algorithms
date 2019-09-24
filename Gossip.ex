@@ -1,3 +1,4 @@
+#trying a commit
 defmodule Gossip do
 #This is the main module
   def main do
