@@ -1,3 +1,4 @@
+#trying a commit
 defmodule Gossip do
   def convergence(num_nodes_completed, num_nodes, start_time, end_time, pid) do
     # keep track of time and number of nodes that are dead, try to build a connection for algo implementations
