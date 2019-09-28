@@ -58,10 +58,14 @@ defmodule GossipActor do
   end
 
   def handle_call({:get_neighbors_count}, _from, state) do
-    {:reply, length(Map.fetch(state, "neighbors")), state}
+    {:reply, Map.fetch(state, "neighbors"), state}
   end
 
   def handle_call({:set_message}, _from, state) do
     {:reply, Map.put(state, "message", state)}
+  end
+
+  def set_neighbors(actor, neighbors) do
+    GenServer.cast(actor, {:set_neighbors, neighbors})
   end
 end

@@ -1,7 +1,7 @@
-# trying a commit
 defmodule Gossip do
   use GenServer
   # This is the main module
+
   def main do
     argument_list = System.argv()
     # num_nodes = 0
@@ -30,10 +30,14 @@ defmodule Gossip do
 
       # now set appropriate list of neighbors to each actor
       for {actor, neighbors} <- map_of_neighbors do
+        # GossipActor.set_neighbors(actor, neighbors)
         GenServer.cast(actor, {:set_neighbors, neighbors})
       end
 
+      start_time = :os.system_time(:millisecond)
       start_gossiping(actors, map_of_neighbors)
+      end_time = :os.system_time(:millisecond)
+      IO.puts("Time taken for convergence is #{end_time - start_time}ms")
     else
       # Call to pushsum actors goes here
     end
@@ -42,14 +46,15 @@ defmodule Gossip do
   def spawn_actors(num_nodes) do
     random_initial_node = Enum.random(1..num_nodes)
 
-    actor =
-      Enum.map(1..num_nodes, fn n ->
-        if n == random_initial_node do
-          {:ok, actor} = GenServer.start_link(GossipActor, "rumor")
-        else
-          {:ok, actor} = GenServer.start_link(GossipActor, "")
-        end
-      end)
+    Enum.map(1..num_nodes, fn n ->
+      if n == random_initial_node do
+        {:ok, actor} = GenServer.start_link(GossipActor, "rumor")
+        actor
+      else
+        {:ok, actor} = GenServer.start_link(GossipActor, "")
+        actor
+      end
+    end)
   end
 
   def start_gossiping(actors, map_of_neighbors) do
@@ -65,10 +70,7 @@ defmodule Gossip do
       map_of_neighbors =
         Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
 
-      start_time = :os.system_time(:millisecond)
       start_gossiping(live_actors, map_of_neighbors)
-      end_time = :os.system_time(:millisecond)
-      IO.puts("Time taken for convergence is #{(start_time - end_time) * 1000}s")
     else
       IO.puts("Gosipping ends as all the actors are terminated")
     end
@@ -78,7 +80,8 @@ defmodule Gossip do
     # Returns all the actors whoes count is less than 10 and have atleast one neighbor
     alive_actors =
       Enum.map(actors, fn act ->
-        {:ok, neighbors_count} = GenServer.call(act, {:get_neighbors_count})
+        {:ok, neighbors_list} = GenServer.call(act, {:get_neighbors})
+        neighbors_count = length(neighbors_list)
         {:ok, count} = GenServer.call(act, {:get_count})
 
         if Process.alive?(act) && count < 10 && neighbors_count > 0 do
