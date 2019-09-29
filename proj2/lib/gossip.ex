@@ -1,18 +1,9 @@
 defmodule Gossip do
-  use GenServer
+  #use GenServer
   # This is the main module
 
   def main do
     argument_list = System.argv()
-    # num_nodes = 0
-
-    # if Enum.count(argument_list) != 3 do
-    #   IO.puts("Provide number of nodes, topology and algorithm")
-    # else
-    #   num_nodes = Enum.at(argument_list, 0)
-    #   topology = Enum.at(argument_list, 1)
-    #   algorithm = Enum.at(argument_list, 2)
-    # end
 
     num_nodes = String.to_integer(Enum.at(argument_list, 0))
     topology = Enum.at(argument_list, 1)
@@ -22,11 +13,20 @@ defmodule Gossip do
       IO.puts("Nodes should be greater than 1")
     end
 
+    #add correction
+    num_nodes = Utils.node_correction(num_nodes,topology)
+
+    node_list = Enum.map(1..num_nodes, fn n ->
+      actor = "actor_" <> to_string(n)
+      String.to_atom(actor)
+    end)
+
     if algorithm == "gossip" do
-      actors = spawn_actors(num_nodes)
+      actors = spawn_actors(node_list)
 
       # now interate teammates code in here, Hoping to get a Map: key(actor):value[list of neighbors]
-      map_of_neighbors = Utils.get_neighbors(actors, topology)
+      map_of_neighbors = Utils.get_neighbors(node_list, topology)
+      IO.inspect map_of_neighbors
 
       # now set appropriate list of neighbors to each actor
       for {actor, neighbors} <- map_of_neighbors do
@@ -35,7 +35,7 @@ defmodule Gossip do
       end
 
       start_time = :os.system_time(:millisecond)
-      start_gossiping(actors, map_of_neighbors)
+      start_gossiping(actors, map_of_neighbors, node_list, true)
       end_time = :os.system_time(:millisecond)
       IO.puts("Time taken for convergence is #{end_time - start_time}ms")
     else
@@ -43,26 +43,21 @@ defmodule Gossip do
     end
   end
 
-  def spawn_actors(num_nodes) do
-    random_initial_node = Enum.random(1..num_nodes)
+  def spawn_actors(node_list) do
 
-    Enum.map(1..num_nodes, fn n ->
-      if n == random_initial_node do
-        {:ok, actor} = GenServer.start_link(GossipActor, "rumor")
+    #IO.inspect node_list
+    Enum.map(node_list, fn n ->
+        {:ok, actor} = GenServer.start_link(GossipActor, "", name: n)
         actor
-      else
-        {:ok, actor} = GenServer.start_link(GossipActor, "")
-        actor
-      end
-    end)
+        end)
   end
 
-  def start_gossiping(actors, map_of_neighbors) do
-    # For each actor trigger transmit rumor on it as a handle cast
-    for {actor, neighbors} <- map_of_neighbors do
-      GenServer.cast(actor, {:transmit_rumor})
+  def start_gossiping(actors, map_of_neighbors, node_list, first_call) do
+    if first_call == true do
+      actor = Enum.random(node_list)
+      GenServer.cast(actor, {:transmit_rumor, "rumor"})
+      first_call = false
     end
-
     live_actors = get_alive_actors(actors)
 
     if length(live_actors) > 1 do
@@ -70,7 +65,7 @@ defmodule Gossip do
       map_of_neighbors =
         Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
 
-      start_gossiping(live_actors, map_of_neighbors)
+      start_gossiping(live_actors, map_of_neighbors,node_list, first_call)
     else
       IO.puts("Gosipping ends as all the actors are terminated")
     end
@@ -88,7 +83,7 @@ defmodule Gossip do
           act
         end
       end)
-
+    #IO.inspect alive_actors
     List.delete(Enum.uniq(alive_actors), nil)
   end
 end
