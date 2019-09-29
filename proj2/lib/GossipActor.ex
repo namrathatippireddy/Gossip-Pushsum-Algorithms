@@ -6,6 +6,7 @@ defmodule GossipActor do
   end
 
   def handle_cast({:set_neighbors, neighbors}, state) do
+    IO.inspect neighbors
     {:noreply, Map.put(state, "neighbors", neighbors)}
   end
 
@@ -13,7 +14,10 @@ defmodule GossipActor do
     {:reply, Map.fetch(state, "neighbors"), state}
   end
 
-  def handle_cast({:transmit_rumor}, state) do
+  def handle_cast({:transmit_rumor, rumor}, state) do
+
+    state = Map.put(state, "message", rumor)
+
     {:ok, message} = Map.fetch(state, "message")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
 
@@ -31,8 +35,6 @@ defmodule GossipActor do
       _ = GenServer.cast(sender, {:terminate_neighbor, self()})
       {:noreply, state}
     else
-      # when count<10 increment the counter and set his msg, if
-      # But you know what he is incrementing the count even on blank msg :P
       state = Map.put(state, "count", count + 1)
       {:ok, existing_msg} = Map.fetch(state, "message")
 
