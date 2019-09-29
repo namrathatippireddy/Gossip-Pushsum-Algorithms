@@ -7,9 +7,12 @@ defmodule Utils do
       "full" ->
         Topology.get_full_neighbors(actors)
         # "rand2D" -> numNodes
-        # "3Dtorus" -> getCube(numNodes)
-        # "honeycomb" -> numNodes
-        # "randhoneycomd" -> numNodes
+      "3Dtorus" ->
+        Topology.get_3Dtorus_neighbours(actors)
+      "honeycomb" ->
+        Topology.get_honeycomb_neighbours(actors)
+      "randhoneycomd" ->
+        Topology.get_randhoneycomb_neighbours(actors)
     end
   end
 
@@ -22,7 +25,7 @@ defmodule Utils do
         "rand2D" ->
           num_nodes
         "3Dtorus" ->
-          num_nodes = get_next_cube(num_nodes/2,num_nodes)
+          num_nodes = get_next_cube(1,num_nodes)
         "honeycomb" ->
            num_nodes
         "randhoneycomd" ->
@@ -36,6 +39,15 @@ defmodule Utils do
       get_next_cube(i+1,numNodes)
     else
       i*i*i
+    end
+  end
+
+  def findCubeRoot(i,numNodes) do
+    test = (i*i*i) == numNodes
+    if test do
+      i
+    else
+      get_next_cube(i+1,numNodes)
     end
   end
 end

@@ -15,7 +15,7 @@ defmodule Topology do
     totalLength = length(actorList)
     [_ , actorNumber] = String.split(Atom.to_string(curActor),"_")
     actorNumber = String.to_integer(actorNumber)
-    neighbours = []
+
     if actorNumber == 0 do
       [String.to_atom("actor_#{1}")]
     end
@@ -46,20 +46,9 @@ defmodule Topology do
     totalLength = length(actorList)
     [_ , actorNumber] = String.split(Atom.to_string(curActor),"_")
     actorNumber = String.to_integer(actorNumber)
-    neighbours = []
 
     nSqr = n * n
-    nCube = n * n * n
-    #Corners of the 3D torus (layer1)
-    corner0 = 0
-    corner1 = n - 1
-    corner2 = nSqr - n
-    corner3 = nSqr - 1
-    #Corners of layer n
-    corner4 = nCube - nSqr
-    corner5 = nCube - nSqr + n - 1
-    corner6 = nCube - n
-    corner7 = nCube - 1
+
     #Get the layer of the torus
     layer = round(:math.floor(actorNumber/nSqr))
     #Get column and row
