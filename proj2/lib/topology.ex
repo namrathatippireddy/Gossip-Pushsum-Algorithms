@@ -5,20 +5,27 @@ defmodule Topology do
     end)
   end
 
-  # def line(actorList,curActor) do
-  #     totalLength = length(actorList)
-  #     {_, actorNumber} = String(curActor,"_")
-  #     actorNumber = to_integer(actorNumber)
-  #     neighbours = []
-  #     if actorNumber - 1 >= 0 do
-  #         neighbours ++ ["server_" <> to_string(actorNumber - 1)]
-  #     end
-  #
-  #     if actorNumber + 1 < totalLength do
-  #         neighbours ++ ["server_" <> to_string(actorNumber + 1)]
-  #     end
-  #     neighbours
-  # end
+  def line(actorList) do
+    Enum.reduce(actorList, %{}, fn x, acc ->
+      Map.put(acc, x, line_neighbor(actorList,x))
+    end)
+  end
+
+  def line_neighbor(actorList,curActor) do
+    totalLength = length(actorList)
+    [_ , actorNumber] = String.split(Atom.to_string(curActor),"_")
+    actorNumber = String.to_integer(actorNumber)
+    neighbours = []
+    if actorNumber == 1 do
+      [String.to_atom("actor_#{2}")]
+    end
+    if actorNumber == totalLength do
+      [String.to_atom("actor_#{totalLength - 1}")]
+    else
+      [String.to_atom("actor_#{actorNumber - 1}"),String.to_atom("actor_#{actorNumber + 1}")]
+    end
+  end
+
   #
   # def rand2D(actorList,curActor) do
   #      #adjMatrix =
