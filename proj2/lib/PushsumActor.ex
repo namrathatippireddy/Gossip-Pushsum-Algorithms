@@ -30,6 +30,9 @@ defmodule PushsumActor do
     {:ok, triggered} = Map.fetch(state, "triggered")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
 
+    state = Map.put(state, "s", s / 2)
+    state = Map.put(state, "w", w / 2)
+
     if length(neighbors) > 0 && triggered != 0 do
       # because of self() and the name conflict, it messes up here
       {:ok, actor_name} = Map.fetch(state, "name")
