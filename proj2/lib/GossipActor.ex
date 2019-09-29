@@ -1,28 +1,36 @@
 defmodule GossipActor do
   use GenServer
 
-  def init(msg) do
-    {:ok, %{"message" => msg, "count" => 0, "neighbors" => []}}
-  end
-
-  def handle_cast({:set_neighbors, neighbors}, state) do
-    IO.inspect neighbors
-    {:noreply, Map.put(state, "neighbors", neighbors)}
+  def init(gossip_state) do
+    {:ok,
+     %{
+       "message" => Enum.at(gossip_state, 0),
+       "count" => 0,
+       "neighbors" => [],
+       "name" => Enum.at(gossip_state, 1)
+     }}
   end
 
   def handle_call({:get_neighbors}, _from, state) do
     {:reply, Map.fetch(state, "neighbors"), state}
   end
 
-  def handle_cast({:transmit_rumor, rumor}, state) do
+  def handle_cast({:set_neighbors, neighbors}, state) do
+    # IO.inspect(neighbors)
+    {:noreply, Map.put(state, "neighbors", neighbors)}
+  end
 
+  def handle_cast({:transmit_rumor, rumor}, state) do
     state = Map.put(state, "message", rumor)
 
     {:ok, message} = Map.fetch(state, "message")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
 
     if message != "" && length(neighbors) > 0 do
-      _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, self()})
+      # ToDo: figure of sending name of the actor here, as self() gets the pid
+      {:ok, actor_name} = Map.fetch(state, "name")
+      # _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, self()})
+      _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, actor_name})
     end
 
     {:noreply, state}
@@ -32,7 +40,10 @@ defmodule GossipActor do
     {:ok, count} = Map.fetch(state, "count")
 
     if count > 10 do
-      _ = GenServer.cast(sender, {:terminate_neighbor, self()})
+      # ToDo: figure of sending name of the actor here, as self() gets the pid
+      {:ok, actor_name} = Map.fetch(state, "name")
+      # _ = GenServer.cast(sender, {:terminate_neighbor, self()})
+      _ = GenServer.cast(sender, {:terminate_neighbor, actor_name})
       {:noreply, state}
     else
       state = Map.put(state, "count", count + 1)
@@ -43,11 +54,16 @@ defmodule GossipActor do
       else
         {:noreply, Map.put(state, "message", rumor)}
       end
+
+      # this following snippit will replace forloop  in the start_gossiping
+      # {:ok, neighbors} = Map.fetch(state, "neighbors")
+      # GenServer.cast(Enum.random(neighbors), {:transmit_rumor, "rumor"})
     end
   end
 
   def handle_cast({:terminate_neighbor, neighbor}, state) do
     {:ok, neighbors} = Map.fetch(state, "neighbors")
+    # because of self() and the name conflict, it messes up here
     {:noreply, Map.put(state, "neighbors", List.delete(neighbors, neighbor))}
   end
 
@@ -67,7 +83,7 @@ defmodule GossipActor do
     {:reply, Map.put(state, "message", state)}
   end
 
-  def set_neighbors(actor, neighbors) do
-    GenServer.cast(actor, {:set_neighbors, neighbors})
-  end
+  # def set_neighbors(actor, neighbors) do
+  #   GenServer.cast(actor, {:set_neighbors, neighbors})
+  # end
 end
