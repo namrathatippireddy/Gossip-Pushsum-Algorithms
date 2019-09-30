@@ -35,14 +35,14 @@ defmodule Topology do
   def get_3Dtorus_neighbours(actorList) do
     totalLength = length(actorList)
     n = Utils.findCubeRoot(1,totalLength)
-    IO.inspect(n)
+
     Enum.reduce(actorList, %{}, fn x, acc ->
       Map.put(acc, x, torus3D_neighbor(actorList,x,n))
     end)
   end
 
   def torus3D_neighbor(actorList,curActor,n) do
-    IO.inspect(curActor)
+
     totalLength = length(actorList)
     [_ , actorNumber] = String.split(Atom.to_string(curActor),"_")
     actorNumber = String.to_integer(actorNumber)
@@ -56,7 +56,8 @@ defmodule Topology do
     row = rem(round(:math.floor(actorNumber/n)),n)
     neighbours = []
     n_1 = n - 1
-    IO.inspect("n-1 is #{n_1} n is #{n} row #{row} column #{column} layer #{layer}")
+    #IO.inspect("n-1 is #{n_1} n is #{n} row #{row} column #{column} layer #{layer}")
+
     #left and right neighbors
     neighbours = neighbours ++ (case column do
       0 ->
@@ -66,6 +67,7 @@ defmodule Topology do
       _ ->
         [String.to_atom("actor_#{actorNumber + 1}"),String.to_atom("actor_#{actorNumber - 1}")]
     end)
+
     #top and bottom neighbors
     neighbours = neighbours ++ (case row do
       0 ->
@@ -75,7 +77,8 @@ defmodule Topology do
       _ ->
         [String.to_atom("actor_#{actorNumber + n}"),String.to_atom("actor_#{actorNumber - n}")]
     end)
-    #front and behind neighbors
+
+    #front and back neighbors
     neighbours = neighbours ++ (case layer do
       0 ->
         [String.to_atom("actor_#{actorNumber + (n*n)}"),String.to_atom("actor_#{actorNumber + n*n*n - n*n}")]
@@ -85,7 +88,6 @@ defmodule Topology do
         [String.to_atom("actor_#{actorNumber + (n*n)}"),String.to_atom("actor_#{actorNumber - n*n}")]
     end)
     neighbours = List.flatten(neighbours)
-    IO.inspect(neighbours)
     neighbours
   end
 
@@ -123,7 +125,7 @@ defmodule Topology do
         end)]
 
         Enum.filter(neighbours, fn x -> x != "" end)
-        #IO.inspect neighbours
+
       else
         neighbours = neighbours ++ [(if actorNumber + n < totalLength do
           String.to_atom("actor_#{actorNumber + n}") else ""
@@ -136,7 +138,7 @@ defmodule Topology do
         end)]
 
         Enum.filter(neighbours, fn x -> x != "" end)
-        #IO.inspect neighbours
+
       end
   end
 
@@ -189,4 +191,38 @@ defmodule Topology do
     end
   end
 
+  def get_rand2Dneighbors(actorList) do
+
+    actors_with_cood = Enum.reduce(actorList, %{},fn curActor, acc ->
+      Map.put(acc, curActor, [round(:random.uniform()*100)/100,round(:random.uniform()*100)/100]) end)
+
+    #IO.inspect actors_with_cood
+
+    Enum.reduce(actorList, %{}, fn x, acc ->
+        Map.put(acc, x, rand2D_neighbor(actors_with_cood,x)) end)
+
+  end
+
+  def rand2D_neighbor(actors_with_cood,curActor) do
+
+
+    neighbors = Enum.filter(actors_with_cood, fn actor_with_cood ->
+      {_,cood} = actor_with_cood
+      [x,y] = cood
+
+      [curx,cury] = actors_with_cood[curActor]
+
+      distance = :math.sqrt(abs((x-curx * x-curx) + (y-cury) * (y-cury)))
+
+      if  distance <= 0.1 do
+        true
+      else
+        false
+      end
+    end)
+
+    Enum.map(neighbors, fn neighbor -> {actor,_} = neighbor
+    actor end)
+
+  end
 end

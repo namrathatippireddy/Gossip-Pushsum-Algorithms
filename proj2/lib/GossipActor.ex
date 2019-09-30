@@ -30,38 +30,34 @@ defmodule GossipActor do
     {:ok, count} = Map.fetch(state, "count")
     {:ok, actor_name} = Map.fetch(state, "name")
 
-    if count <= 10 do
+    if length(neighbors) != 0 && count <= 10 do
       _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, actor_name})
     end
 
     # add sleep
-    # Process.sleep(1)
+    Process.sleep(1)
     GenServer.cast(actor_name, {:transmit_rumor, message})
     {:noreply, state}
   end
 
-  def handle_cast({:receive_rumor, rumor, sender}, state) do
+  def handle_cast({:receive_rumor, rumor, _sender}, state) do
     {:ok, count} = Map.fetch(state, "count")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
     {:ok, actor_name} = Map.fetch(state, "name")
-    {:ok, main_pid} = Map.fetch(state, "main_pid")
     {:ok, watcher_pid} = Map.fetch(state, "watcher_pid")
 
     if count > 10 do
-      # {:ok, actor_name} = Map.fetch(state, "name")
-      # send(main_pid, {:terminate, "dead"})
-
+      #If count > 10 ask neighbor nodes to remove this genServer from their neighbor list
       Enum.each(neighbors, fn each_neighbor ->
         # IO.inspect("#{actor_name} terminating #{each_neighbor}")
         _ = GenServer.cast(each_neighbor, {:terminate_neighbor, actor_name})
       end)
 
-      # Process.exit(self(), :normal)
       #  Watcher-ToDo: Make a call to the increse watcher count of Implement watcher
       # The cast call might be wrong and I need to pass the pid of watcher here
       GenServer.cast(watcher_pid, {:increment_deaths})
       {:noreply, state}
-      #   Process.exit(self(), :normal)
+
     else
       {:ok, actor_name} = Map.fetch(state, "name")
       state = Map.put(state, "count", count + 1)
@@ -104,7 +100,4 @@ defmodule GossipActor do
     {:reply, Map.put(state, "message", state)}
   end
 
-  # def set_alive(actor) do
-  #   GenServer.cast(actor, {:set_neighbors, neighbors})
-  # end
 end
