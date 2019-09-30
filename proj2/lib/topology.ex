@@ -94,7 +94,7 @@ defmodule Topology do
       n = round(:math.ceil(:math.sqrt(totalLength)))
       IO.inspect(n)
       n = if rem(n,2) == 0 do
-        n + 1
+        n - 1
       else
         n
       end
@@ -118,7 +118,7 @@ defmodule Topology do
         neighbours = neighbours ++ [(if actorNumber - n >= 0 do
           String.to_atom("actor_#{actorNumber - n}") else ""
         end)]
-        neighbours = neighbours ++ [(if actorNumber - 1 >= 0 do
+        neighbours = neighbours ++ [(if actorNumber - 1 >= 0 && rem(actorNumber,n) != 0 do
           String.to_atom("actor_#{actorNumber - 1}") else ""
         end)]
         IO.inspect neighbours
@@ -130,7 +130,7 @@ defmodule Topology do
         neighbours = neighbours ++ [(if actorNumber - n >= 0 do
           String.to_atom("actor_#{actorNumber - n}") else ""
         end)]
-        neighbours = neighbours ++ [(if actorNumber + 1 <= totalLength do
+        neighbours = neighbours ++ [(if actorNumber + 1 <= totalLength && rem(actorNumber,n) != (n-1) do
           String.to_atom("actor_#{actorNumber + 1}") else ""
         end)]
         IO.inspect neighbours
