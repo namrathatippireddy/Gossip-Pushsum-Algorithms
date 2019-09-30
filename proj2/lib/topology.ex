@@ -92,27 +92,27 @@ defmodule Topology do
   def get_honeycomb_neighbours(actorList) do
       totalLength = length(actorList)
       n = round(:math.ceil(:math.sqrt(totalLength)))
-      IO.inspect(n)
+
       n = if rem(n,2) == 0 do
         n - 1
       else
         n
       end
-      IO.inspect(n)
+
       Enum.reduce(actorList, %{}, fn x, acc ->
       Map.put(acc, x, honeycomb_neighbor(actorList,x,n))
       end)
   end
 
   def honeycomb_neighbor(actorList,curActor,n) do
-      IO.inspect curActor
+
       totalLength = length(actorList)
       [_ , actorNumber] = String.split(Atom.to_string(curActor),"_")
       actorNumber = String.to_integer(actorNumber)
       neighbours = []
 
       if rem(actorNumber,2) == 0 do
-        neighbours = neighbours ++ [(if actorNumber + n <= totalLength do
+        neighbours = neighbours ++ [(if actorNumber + n < totalLength do
           String.to_atom("actor_#{actorNumber + n}") else ""
         end)]
         neighbours = neighbours ++ [(if actorNumber - n >= 0 do
@@ -121,33 +121,35 @@ defmodule Topology do
         neighbours = neighbours ++ [(if actorNumber - 1 >= 0 && rem(actorNumber,n) != 0 do
           String.to_atom("actor_#{actorNumber - 1}") else ""
         end)]
-        IO.inspect neighbours
+
         Enum.filter(neighbours, fn x -> x != "" end)
+        #IO.inspect neighbours
       else
-        neighbours = neighbours ++ [(if actorNumber + n <= totalLength do
+        neighbours = neighbours ++ [(if actorNumber + n < totalLength do
           String.to_atom("actor_#{actorNumber + n}") else ""
         end)]
         neighbours = neighbours ++ [(if actorNumber - n >= 0 do
           String.to_atom("actor_#{actorNumber - n}") else ""
         end)]
-        neighbours = neighbours ++ [(if actorNumber + 1 <= totalLength && rem(actorNumber,n) != (n-1) do
+        neighbours = neighbours ++ [(if actorNumber + 1 < totalLength && rem(actorNumber,n) != (n-1) do
           String.to_atom("actor_#{actorNumber + 1}") else ""
         end)]
-        IO.inspect neighbours
+
         Enum.filter(neighbours, fn x -> x != "" end)
+        #IO.inspect neighbours
       end
   end
 
   def get_randhoneycomb_neighbours(actorList) do
     totalLength = length(actorList)
     n = round(:math.ceil(:math.sqrt(totalLength)))
-    IO.inspect(n)
+
     n = if rem(n,2) == 0 do
       n + 1
     else
       n
     end
-    IO.inspect(n)
+
     Enum.reduce(actorList, %{}, fn x, acc ->
     Map.put(acc, x, randhoneycomb_neighbor(actorList,x,n))
     end)
@@ -158,31 +160,32 @@ defmodule Topology do
     [_ , actorNumber] = String.split(Atom.to_string(curActor),"_")
     actorNumber = String.to_integer(actorNumber)
     neighbours = []
-    IO.inspect curActor
+
     if rem(actorNumber,2) == 0 do
-      neighbours = neighbours ++ [(if actorNumber + n <= totalLength do
+      neighbours = neighbours ++ [(if actorNumber + n < totalLength do
         String.to_atom("actor_#{actorNumber + n}") else ""
       end)]
       neighbours = neighbours ++ [(if actorNumber - n >= 0 do
         String.to_atom("actor_#{actorNumber - n}") else ""
       end)]
-      neighbours = neighbours ++ [(if actorNumber - 1 >= 0 do
+      neighbours = neighbours ++ [(if actorNumber - 1 >= 0 && rem(actorNumber,n) != (n-1) do
         String.to_atom("actor_#{actorNumber - 1}") else ""
       end)]
       neighbours = neighbours ++ [Enum.random(actorList)]
       Enum.filter(neighbours, fn x -> x != "" end)
     else
-      neighbours = neighbours ++ [(if actorNumber + n <= totalLength do
+      neighbours = neighbours ++ [(if actorNumber + n < totalLength do
         String.to_atom("actor_#{actorNumber + n}") else ""
       end)]
       neighbours = neighbours ++ [(if actorNumber - n >= 0 do
         String.to_atom("actor_#{actorNumber - n}") else ""
       end)]
-      neighbours = neighbours ++ [(if actorNumber + 1 <= totalLength do
+      neighbours = neighbours ++ [(if actorNumber + 1 < totalLength && rem(actorNumber,n) != (n-1) do
         String.to_atom("actor_#{actorNumber + 1}") else ""
       end)]
       neighbours = neighbours ++ [Enum.random(actorList)]
       Enum.filter(neighbours, fn x -> x != "" end)
+
     end
   end
 
