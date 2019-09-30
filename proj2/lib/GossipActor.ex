@@ -7,7 +7,9 @@ defmodule GossipActor do
        "message" => Enum.at(gossip_state, 0),
        "count" => 0,
        "neighbors" => [],
-       "name" => Enum.at(gossip_state, 1)
+       "name" => Enum.at(gossip_state, 1),
+       "main_pid" => Enum.at(gossip_state, 2),
+       "watcher_pid" => Enum.at(gossip_state, 3)
      }}
   end
 
@@ -29,13 +31,11 @@ defmodule GossipActor do
     {:ok, actor_name} = Map.fetch(state, "name")
 
     if count <= 10 do
-      # ToDo: figure of sending name of the actor here, as self() gets the pid
-      # _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, self()})
       _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, actor_name})
     end
 
     # add sleep
-    Process.sleep(1)
+    # Process.sleep(1)
     GenServer.cast(actor_name, {:transmit_rumor, message})
     {:noreply, state}
   end
@@ -43,20 +43,23 @@ defmodule GossipActor do
   def handle_cast({:receive_rumor, rumor, sender}, state) do
     {:ok, count} = Map.fetch(state, "count")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
-
-    # ToDo: Keep it in an infinite loop
-
     {:ok, actor_name} = Map.fetch(state, "name")
+    {:ok, main_pid} = Map.fetch(state, "main_pid")
+    {:ok, watcher_pid} = Map.fetch(state, "watcher_pid")
 
     if count > 10 do
-      {:ok, actor_name} = Map.fetch(state, "name")
+      # {:ok, actor_name} = Map.fetch(state, "name")
+      # send(main_pid, {:terminate, "dead"})
 
       Enum.each(neighbors, fn each_neighbor ->
-        IO.inspect("#{actor_name} terminating #{each_neighbor}")
+        # IO.inspect("#{actor_name} terminating #{each_neighbor}")
         _ = GenServer.cast(each_neighbor, {:terminate_neighbor, actor_name})
       end)
 
       # Process.exit(self(), :normal)
+      #  Watcher-ToDo: Make a call to the increse watcher count of Implement watcher
+      # The cast call might be wrong and I need to pass the pid of watcher here
+      GenServer.cast(watcher_pid, {:increment_deaths})
       {:noreply, state}
       #   Process.exit(self(), :normal)
     else
@@ -77,7 +80,7 @@ defmodule GossipActor do
   end
 
   def handle_cast({:terminate_neighbor, neighbor}, state) do
-    IO.inspect("removing #{neighbor}")
+    # IO.inspect("removing #{neighbor}")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
     # because of self() and the name conflict, it messes up here
     Map.put(state, "neighbors", List.delete(neighbors, neighbor))
@@ -101,7 +104,7 @@ defmodule GossipActor do
     {:reply, Map.put(state, "message", state)}
   end
 
-  # def set_neighbors(actor, neighbors) do
+  # def set_alive(actor) do
   #   GenServer.cast(actor, {:set_neighbors, neighbors})
   # end
 end
