@@ -6,7 +6,8 @@ defmodule Utils do
         Topology.line(actors)
       "full" ->
         Topology.get_full_neighbors(actors)
-        # "rand2D" -> numNodes
+      "rand2D" ->
+        Topology.get_rand2Dneighbors(actors)
       "3Dtorus" ->
         Topology.get_3Dtorus_neighbours(actors)
       "honeycomb" ->
