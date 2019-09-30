@@ -43,11 +43,12 @@ defmodule Utils do
   end
 
   def findCubeRoot(i,numNodes) do
-    test = (i*i*i) == numNodes
+    test = ((i*i*i) == numNodes)
+    IO.inspect("#{i} #{test} #{numNodes}")
     if test do
       i
     else
-      get_next_cube(i+1,numNodes)
+      findCubeRoot(i+1,numNodes)
     end
   end
 end
