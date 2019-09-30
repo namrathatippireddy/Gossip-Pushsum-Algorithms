@@ -46,6 +46,14 @@ defmodule PushsumActor do
     {:ok, diff1} = Map.fetch(state, "diff1")
     {:ok, diff2} = Map.fetch(state, "diff2")
     {:ok, diff3} = Map.fetch(state, "diff3")
+    {:ok, s_cur} = Map.fetch(state, "s")
+    {:ok, w_cur} = Map.fetch(state, "w")
+    s_new = s_cur + s_recvd
+    w_new = w_cur + w_recvd
+
+    {:ok, neighbors} = Map.fetch(state, "neighbors")
+    # Added this as a substitute for "for" loop in main
+    _ = GenServer.cast(Enum.random(neighbors), {:transmit_values})
 
     # if three consecutive differences are less than 10 power -10 terminate the actor
     if diff1 < :math.pow(10, -10) && diff2 < :math.pow(10, -10) && diff3 < :math.pow(10, -10) do
@@ -55,10 +63,6 @@ defmodule PushsumActor do
       {:noreply, state}
     else
       # fetching current values and updating them
-      {:ok, s_cur} = Map.fetch(state, "s")
-      {:ok, w_cur} = Map.fetch(state, "w")
-      s_new = s_cur + s_recvd
-      w_new = w_cur + w_recvd
 
       diff1 = diff2
       diff2 = diff3
@@ -102,8 +106,4 @@ defmodule PushsumActor do
   def handle_call({:set_message}, _from, state) do
     {:reply, Map.put(state, "message", state)}
   end
-
-  # def set_neighbors(actor, neighbors) do
-  #   GenServer.cast(actor, {:set_neighbors, neighbors})
-  # end
 end
