@@ -3,6 +3,7 @@ defmodule Gossip do
   # This is the main module
 
   def main do
+    main_pid = self()
     argument_list = System.argv()
 
     # if Enum.count(argument_list) != 3 do
@@ -27,8 +28,9 @@ defmodule Gossip do
       end)
 
     if algorithm == "gossip" do
-      # Here the actors list contains pids
-      spawn_actors(node_list)
+      # Starting the watcher here
+      {:ok, watcher_pid} = GenServer.start_link(Watcher, [main_pid, length(node_list)])
+      spawn_actors(node_list, main_pid, watcher_pid)
 
       # now interate teammates code in here, Hoping to get a Map: key(actor):value[list of neighbors]
       map_of_neighbors = Utils.get_neighbors(node_list, topology)
@@ -41,9 +43,29 @@ defmodule Gossip do
       end
 
       start_time = :os.system_time(:millisecond)
+      # Watcher-ToDo: {:ok, watcher} = GossipWatcher.start_link
       start_gossiping(map_of_neighbors, node_list, true)
-      end_time = :os.system_time(:millisecond)
-      IO.puts("Time taken for convergence is #{end_time - start_time}ms")
+      # end_time = :os.system_time(:millisecond)
+
+      # Watcher calls the gossip end, when all the actors are done
+      receive do
+        {:gossip_end, response} ->
+          end_time = :os.system_time(:millisecond)
+          IO.puts("Time taken for convergence is #{end_time - start_time}ms")
+      end
+
+      # IO.puts("Time taken for convergence is #{end_time - start_time}ms")
+      # terminated_nodes = 0
+      # receive do
+      #   {:terminate, response} ->
+      #     terminated_nodes = terminated_nodes + 1
+      # end
+      #
+      # if(terminated_nodes == num_nodes) do
+      #   end_time = :os.system_time(:millisecond)
+      #   IO.puts("Time taken for convergence is #{end_time - start_time}ms")
+      #   send(main_pid, {:terminated, ""})
+      # end
     else
       # Pushsum logic starts here
       if algorithm == "pushsum" do
@@ -65,12 +87,12 @@ defmodule Gossip do
     end
   end
 
-  def spawn_actors(node_list) do
+  def spawn_actors(node_list, main_pid, watcher_pid) do
     # IO.inspect node_list
     # random_initial_node = Enum.random(node_list)
 
     Enum.map(node_list, fn n ->
-      {:ok, actor} = GenServer.start_link(GossipActor, ["", n], name: n)
+      {:ok, actor} = GenServer.start_link(GossipActor, ["", n, main_pid, watcher_pid], name: n)
       actor
     end)
   end
@@ -92,20 +114,20 @@ defmodule Gossip do
     #   GenServer.cast(actor_name, {:transmit_rumor, "rumor"})
     # end
 
-    live_actors = get_alive_actors(node_list)
-    # IO.inspect(live_actors)
-
-    if length(live_actors) > 1 do
-      # Now map_of_neighbors should only have the entries of the alive actors
-      map_of_neighbors =
-        Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
-
-      # (this is needed if we were to eleminate the forloop above )
-      first_call = false
-      start_gossiping(map_of_neighbors, live_actors, first_call)
-    else
-      IO.puts("Gosipping ends as all the actors are terminated")
-    end
+    # live_actors = get_alive_actors(node_list)
+    # # IO.inspect(live_actors)
+    #
+    # if length(live_actors) > 1 do
+    #   # Now map_of_neighbors should only have the entries of the alive actors
+    #   map_of_neighbors =
+    #     Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
+    #
+    #   # (this is needed if we were to eleminate the forloop above )
+    #   first_call = false
+    #   start_gossiping(map_of_neighbors, live_actors, first_call)
+    # else
+    #   IO.puts("Gosipping ends as all the actors are terminated")
+    # end
   end
 
   def get_alive_actors(node_list) do
@@ -117,7 +139,6 @@ defmodule Gossip do
         {:ok, count} = GenServer.call(act, {:get_count})
 
         # Process.alive isn't working with the names
-
         if Process.alive?(Process.whereis(act)) && count < 10 && neighbors_count > 0 do
           # if count < 10 && neighbors_count > 0 do
           act
@@ -150,10 +171,10 @@ defmodule Gossip do
 
   def start_pushsum(node_list, map_of_neighbors) do
     # Ask each actor to start sending values
-    for {actor_name, neighbors} <- map_of_neighbors do
-      # ToDo: send the proper values here
-      GenServer.cast(actor_name, {:transmit_values})
-    end
+    # for {actor_name, neighbors} <- map_of_neighbors do
+    #   # ToDo: send the proper values here
+    #   GenServer.cast(actor_name, {:transmit_values})
+    # end
 
     live_actors = get_alive_pushsum_actors(node_list)
 
