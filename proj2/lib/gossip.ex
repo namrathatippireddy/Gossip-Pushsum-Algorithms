@@ -29,7 +29,7 @@ defmodule Gossip do
 
     if algorithm == "gossip" do
       # Starting the watcher here
-      {:ok, watcher_pid} = GenServer.start_link(Watcher, [main_pid, length(node_list)])
+      {:ok, watcher_pid} = GenServer.start_link(Watcher, [main_pid, length(node_list), topology])
       spawn_actors(node_list, main_pid, watcher_pid)
 
       # now interate teammates code in here, Hoping to get a Map: key(actor):value[list of neighbors]
@@ -69,7 +69,7 @@ defmodule Gossip do
     else
       # Pushsum logic starts here
       if algorithm == "pushsum" do
-        {:ok, watcher_pid} = GenServer.start_link(Watcher, [main_pid, length(node_list)])
+        {:ok, watcher_pid} = GenServer.start_link(Watcher, [main_pid, length(node_list), topology])
         spawn_pushsum_actors(node_list, watcher_pid)
         map_of_neighbors = Utils.get_neighbors(node_list, topology)
 
