@@ -78,7 +78,7 @@ defmodule Gossip do
         end
 
         start_time = :os.system_time(:millisecond)
-        start_pushsum(node_list, map_of_neighbors)
+        start_pushsum(node_list, map_of_neighbors, true)
         end_time = :os.system_time(:millisecond)
         IO.puts("Time taken for convergence is #{end_time - start_time}ms")
       else
@@ -130,51 +130,64 @@ defmodule Gossip do
     # end
   end
 
-  def get_alive_actors(node_list) do
-    # Returns all the actors whose count is less than 10 and has atleast one neighbor
-    alive_actors =
-      Enum.map(node_list, fn act ->
-        {:ok, neighbors_list} = GenServer.call(act, {:get_neighbors})
-        neighbors_count = length(neighbors_list)
-        {:ok, count} = GenServer.call(act, {:get_count})
-
-        # Process.alive isn't working with the names
-        if Process.alive?(Process.whereis(act)) && count < 10 && neighbors_count > 0 do
-          # if count < 10 && neighbors_count > 0 do
-          act
-        end
-      end)
-
-    # IO.inspect alive_actors
-    List.delete(Enum.uniq(alive_actors), nil)
-  end
+  # def get_alive_actors(node_list) do
+  #   # Returns all the actors whose count is less than 10 and has atleast one neighbor
+  #   alive_actors =
+  #     Enum.map(node_list, fn act ->
+  #       {:ok, neighbors_list} = GenServer.call(act, {:get_neighbors})
+  #       neighbors_count = length(neighbors_list)
+  #       {:ok, count} = GenServer.call(act, {:get_count})
+  #
+  #       # Process.alive isn't working with the names
+  #       if Process.alive?(Process.whereis(act)) && count < 10 && neighbors_count > 0 do
+  #         # if count < 10 && neighbors_count > 0 do
+  #         act
+  #       end
+  #     end)
+  #
+  #   # IO.inspect alive_actors
+  #   List.delete(Enum.uniq(alive_actors), nil)
+  # end
 
   def spawn_pushsum_actors(node_list) do
-    random_initial_node = Enum.random(node_list)
-
+    # random_initial_node = Enum.random(node_list)
+    #
     Enum.map(node_list, fn n ->
-      if n == random_initial_node do
-        # Make sure the first element of the array passed "S" value is a number but not atom
-        # Here is how to cast Atom back to integer
-        [_, actorNumber] = String.split(Atom.to_string(n), "_")
-        s_integer = String.to_integer(actorNumber)
-        {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 1, n], name: n)
-        actor
-      else
-        [_, actorNumber] = String.split(Atom.to_string(n), "_")
-        s_integer = String.to_integer(actorNumber)
-        {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 0, n], name: n)
-        actor
-      end
+      #   if n == random_initial_node do
+      #     # Make sure the first element of the array passed "S" value is a number but not atom
+      #     # Here is how to cast Atom back to integer
+      #     [_, actorNumber] = String.split(Atom.to_string(n), "_")
+      #     s_integer = String.to_integer(actorNumber)
+      #     {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 1, n], name: n)
+      #     actor
+      #   else
+      [_, actorNumber] = String.split(Atom.to_string(n), "_")
+      s_integer = String.to_integer(actorNumber)
+      {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 0, n], name: n)
+      actor
     end)
   end
 
-  def start_pushsum(node_list, map_of_neighbors) do
+  def start_pushsum(node_list, map_of_neighbors, first_call) do
     # Ask each actor to start sending values
     # for {actor_name, neighbors} <- map_of_neighbors do
     #   # ToDo: send the proper values here
     #   GenServer.cast(actor_name, {:transmit_values})
     # end
+
+    # ToDo: For mahee I'm trying to run the previous code
+    first_call =
+      if first_call == true do
+        actor_name = Enum.random(node_list)
+        [_, actorNumber] = String.split(Atom.to_string(actor_name), "_")
+        s_integer = String.to_integer(actorNumber)
+        # GenServer.cast(actor_name, {:receive_values, s_integer, 1, actor_name})
+        GenServer.cast(actor_name, {:transmit_values})
+        # (this won't work ad it is local scoped)
+        first_call = false
+      else
+        false
+      end
 
     live_actors = get_alive_pushsum_actors(node_list)
 
@@ -182,7 +195,8 @@ defmodule Gossip do
       map_of_neighbors =
         Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
 
-      start_pushsum(live_actors, map_of_neighbors)
+      first_call = false
+      start_pushsum(live_actors, map_of_neighbors, first_call)
     else
       IO.puts("Pushsum ends all actors are terminated")
     end
