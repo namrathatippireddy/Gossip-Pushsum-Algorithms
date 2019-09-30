@@ -11,7 +11,7 @@ defmodule Utils do
         Topology.get_3Dtorus_neighbours(actors)
       "honeycomb" ->
         Topology.get_honeycomb_neighbours(actors)
-      "randhoneycomd" ->
+      "randhoneycomb" ->
         Topology.get_randhoneycomb_neighbours(actors)
     end
   end
@@ -28,8 +28,8 @@ defmodule Utils do
           num_nodes = get_next_cube(1,num_nodes)
         "honeycomb" ->
            num_nodes
-        "randhoneycomd" ->
-          num_nodes
+        "randhoneycomb" ->
+           num_nodes
     end
   end
 
