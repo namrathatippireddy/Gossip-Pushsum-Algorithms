@@ -25,6 +25,7 @@ defmodule PushsumActor do
   end
 
   def handle_cast({:transmit_values}, state) do
+    state = Map.put(state, "triggered", 1)
     {:ok, s} = Map.fetch(state, "s")
     {:ok, w} = Map.fetch(state, "w")
     {:ok, triggered} = Map.fetch(state, "triggered")
@@ -33,7 +34,7 @@ defmodule PushsumActor do
     state = Map.put(state, "s", s / 2)
     state = Map.put(state, "w", w / 2)
 
-    if length(neighbors) > 0 && triggered != 0 do
+    if length(neighbors) > 0 do
       # because of self() and the name conflict, it messes up here
       {:ok, actor_name} = Map.fetch(state, "name")
       _ = GenServer.cast(Enum.random(neighbors), {:receive_values, s / 2, w / 2, actor_name})
@@ -50,18 +51,25 @@ defmodule PushsumActor do
     {:ok, w_cur} = Map.fetch(state, "w")
     s_new = s_cur + s_recvd
     w_new = w_cur + w_recvd
+    {:ok, actor_name} = Map.fetch(state, "name")
 
     {:ok, neighbors} = Map.fetch(state, "neighbors")
-    # Added this as a substitute for "for" loop in main
-    _ = GenServer.cast(Enum.random(neighbors), {:transmit_values})
+    GenServer.cast(Enum.random(neighbors), {:transmit_values})
 
     # if three consecutive differences are less than 10 power -10 terminate the actor
     if diff1 < :math.pow(10, -10) && diff2 < :math.pow(10, -10) && diff3 < :math.pow(10, -10) do
       # because of self() and the name conflict, it messes up here
-      {:ok, actor_name} = Map.fetch(state, "name")
-      _ = GenServer.cast(sender, {:terminate_neighbor, actor_name})
+      # IO.puts("Inside termination condition")
+      # {:ok, actor_name} = Map.fetch(state, "name")
+      # _ = GenServer.cast(sender, {:terminate_neighbor, actor_name})
+      Enum.each(neighbors, fn each_neighbor ->
+        GenServer.cast(each_neighbor, {:terminate_neighbor, actor_name})
+      end)
+
       {:noreply, state}
     else
+      # Added this as a substitute for "for" loop in main
+
       # fetching current values and updating them
 
       diff1 = diff2
@@ -79,7 +87,9 @@ defmodule PushsumActor do
       state = Map.put(state, "diff1", diff1)
       state = Map.put(state, "diff2", diff2)
       state = Map.put(state, "diff3", diff3)
-      state = Map.put(state, "triggered", 1)
+      # state = Map.put(state, "triggered", 1)
+      # {:ok, neighbors} = Map.fetch(state, "neighbors")
+      # GenServer.cast(Enum.random(neighbors), {:transmit_values})
       {:noreply, state}
     end
   end
