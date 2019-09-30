@@ -12,7 +12,8 @@ defmodule PushsumActor do
        "triggered" => Enum.at(pushsum_state, 1),
        "neighbors" => [],
        # this is to carry actor name in the state to persist, might replace self()
-       "name" => Enum.at(pushsum_state, 2)
+       "name" => Enum.at(pushsum_state, 2),
+       "watcher_pid" => Enum.at(pushsum_state, 3)
      }}
   end
 
@@ -49,6 +50,7 @@ defmodule PushsumActor do
     {:ok, diff3} = Map.fetch(state, "diff3")
     {:ok, s_cur} = Map.fetch(state, "s")
     {:ok, w_cur} = Map.fetch(state, "w")
+    {:ok, watcher_pid} = Map.fetch(state, "watcher_pid")
     s_new = s_cur + s_recvd
     w_new = w_cur + w_recvd
     {:ok, actor_name} = Map.fetch(state, "name")
@@ -65,6 +67,8 @@ defmodule PushsumActor do
       Enum.each(neighbors, fn each_neighbor ->
         GenServer.cast(each_neighbor, {:terminate_neighbor, actor_name})
       end)
+
+      GenServer.cast(watcher_pid, {:increment_deaths})
 
       {:noreply, state}
     else
