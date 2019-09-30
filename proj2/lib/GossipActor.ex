@@ -25,46 +25,64 @@ defmodule GossipActor do
 
     {:ok, message} = Map.fetch(state, "message")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
+    {:ok, count} = Map.fetch(state, "count")
+    {:ok, actor_name} = Map.fetch(state, "name")
 
-    if message != "" && length(neighbors) > 0 do
+    if count <= 10 do
       # ToDo: figure of sending name of the actor here, as self() gets the pid
-      {:ok, actor_name} = Map.fetch(state, "name")
       # _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, self()})
       _ = GenServer.cast(Enum.random(neighbors), {:receive_rumor, message, actor_name})
     end
 
+    # add sleep
+    Process.sleep(1)
+    GenServer.cast(actor_name, {:transmit_rumor, message})
     {:noreply, state}
   end
 
   def handle_cast({:receive_rumor, rumor, sender}, state) do
     {:ok, count} = Map.fetch(state, "count")
+    {:ok, neighbors} = Map.fetch(state, "neighbors")
+
+    # ToDo: Keep it in an infinite loop
+
+    {:ok, actor_name} = Map.fetch(state, "name")
 
     if count > 10 do
-      # ToDo: figure of sending name of the actor here, as self() gets the pid
       {:ok, actor_name} = Map.fetch(state, "name")
-      # _ = GenServer.cast(sender, {:terminate_neighbor, self()})
-      _ = GenServer.cast(sender, {:terminate_neighbor, actor_name})
+
+      Enum.each(neighbors, fn each_neighbor ->
+        IO.inspect("#{actor_name} terminating #{each_neighbor}")
+        _ = GenServer.cast(each_neighbor, {:terminate_neighbor, actor_name})
+      end)
+
+      # Process.exit(self(), :normal)
       {:noreply, state}
+      #   Process.exit(self(), :normal)
     else
+      {:ok, actor_name} = Map.fetch(state, "name")
       state = Map.put(state, "count", count + 1)
+      # IO.puts("count value is #{count}")
       {:ok, existing_msg} = Map.fetch(state, "message")
 
-      if(existing_msg != "") do
+      if(existing_msg == "") do
+        state = Map.put(state, "message", rumor)
+        GenServer.cast(actor_name, {:transmit_rumor, existing_msg})
         {:noreply, state}
       else
-        {:noreply, Map.put(state, "message", rumor)}
+        # IO.inspect("here #{count + 1}")
+        {:noreply, state}
       end
-
-      # this following snippit will replace forloop  in the start_gossiping
-      # {:ok, neighbors} = Map.fetch(state, "neighbors")
-      # GenServer.cast(Enum.random(neighbors), {:transmit_rumor, "rumor"})
     end
   end
 
   def handle_cast({:terminate_neighbor, neighbor}, state) do
+    IO.inspect("removing #{neighbor}")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
     # because of self() and the name conflict, it messes up here
-    {:noreply, Map.put(state, "neighbors", List.delete(neighbors, neighbor))}
+    Map.put(state, "neighbors", List.delete(neighbors, neighbor))
+    # IO.inspect("new state #{state}")
+    {:noreply, state}
   end
 
   def handle_call({:get_count}, _from, state) do
