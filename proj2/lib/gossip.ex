@@ -49,7 +49,7 @@ defmodule Gossip do
 
       # Watcher calls the gossip end, when all the actors are done
       receive do
-        {:gossip_end, response} ->
+        {:algo_end, response} ->
           end_time = :os.system_time(:millisecond)
           IO.puts("Time taken for convergence is #{end_time - start_time}ms")
       end
@@ -69,7 +69,8 @@ defmodule Gossip do
     else
       # Pushsum logic starts here
       if algorithm == "pushsum" do
-        spawn_pushsum_actors(node_list)
+        {:ok, watcher_pid} = GenServer.start_link(Watcher, [main_pid, length(node_list)])
+        spawn_pushsum_actors(node_list, watcher_pid)
         map_of_neighbors = Utils.get_neighbors(node_list, topology)
 
         # now set appropriate list of neighbors to each actor
@@ -79,8 +80,11 @@ defmodule Gossip do
 
         start_time = :os.system_time(:millisecond)
         start_pushsum(node_list, map_of_neighbors, true)
-        end_time = :os.system_time(:millisecond)
-        IO.puts("Time taken for convergence is #{end_time - start_time}ms")
+        receive do
+          {:algo_end, response} ->
+            end_time = :os.system_time(:millisecond)
+            IO.puts("Time taken for convergence is #{end_time - start_time}ms")
+        end
       else
         IO.puts("Invalid algorithm, please enter a valid algorithm")
       end
@@ -149,7 +153,7 @@ defmodule Gossip do
   #   List.delete(Enum.uniq(alive_actors), nil)
   # end
 
-  def spawn_pushsum_actors(node_list) do
+  def spawn_pushsum_actors(node_list, watcher_pid) do
     # random_initial_node = Enum.random(node_list)
     #
     Enum.map(node_list, fn n ->
@@ -163,7 +167,7 @@ defmodule Gossip do
       #   else
       [_, actorNumber] = String.split(Atom.to_string(n), "_")
       s_integer = String.to_integer(actorNumber)
-      {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 0, n], name: n)
+      {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 0, n, watcher_pid], name: n)
       actor
     end)
   end
@@ -189,38 +193,38 @@ defmodule Gossip do
         false
       end
 
-    live_actors = get_alive_pushsum_actors(node_list)
-
-    if length(live_actors) > 1 do
-      map_of_neighbors =
-        Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
-
-      first_call = false
-      start_pushsum(live_actors, map_of_neighbors, first_call)
-    else
-      IO.puts("Pushsum ends all actors are terminated")
-    end
+    # live_actors = get_alive_pushsum_actors(node_list)
+    #
+    # if length(live_actors) > 1 do
+    #   map_of_neighbors =
+    #     Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
+    #
+    #   first_call = false
+    #   start_pushsum(live_actors, map_of_neighbors, first_call)
+    # else
+    #   IO.puts("Pushsum ends all actors are terminated")
+    # end
   end
 
-  def get_alive_pushsum_actors(node_list) do
-    alive_actors =
-      Enum.map(node_list, fn act ->
-        {:ok, neighbors_list} = GenServer.call(act, {:get_neighbors})
-        neighbors_count = length(neighbors_list)
-        # {:ok, diff_list} = GenServer.call(act, {:get_diff})
-        # diff1 = Enum.at(diff_list, 0)
-        # diff2 = Enum.at(diff_list, 1)
-        # diff3 = Enum.at(diff_list, 2)
-        alive = GenServer.call(act, {:check_alive})
-        # IO.puts("Alive? #{alive}")
-        # donno if Process.alive takes pid or can work on something other than pid
-        # if Process.alive?(act) && neighbors_count > 0 && alive do
-        if neighbors_count > 0 && alive do
-          act
-        end
-      end)
-
-    # IO.inspect alive_actors
-    List.delete(Enum.uniq(alive_actors), nil)
-  end
+  # def get_alive_pushsum_actors(node_list) do
+  #   alive_actors =
+  #     Enum.map(node_list, fn act ->
+  #       {:ok, neighbors_list} = GenServer.call(act, {:get_neighbors})
+  #       neighbors_count = length(neighbors_list)
+  #       # {:ok, diff_list} = GenServer.call(act, {:get_diff})
+  #       # diff1 = Enum.at(diff_list, 0)
+  #       # diff2 = Enum.at(diff_list, 1)
+  #       # diff3 = Enum.at(diff_list, 2)
+  #       alive = GenServer.call(act, {:check_alive})
+  #       # IO.puts("Alive? #{alive}")
+  #       # donno if Process.alive takes pid or can work on something other than pid
+  #       # if Process.alive?(act) && neighbors_count > 0 && alive do
+  #       if neighbors_count > 0 && alive do
+  #         act
+  #       end
+  #     end)
+  #
+  #   # IO.inspect alive_actors
+  #   List.delete(Enum.uniq(alive_actors), nil)
+  # end
 end
