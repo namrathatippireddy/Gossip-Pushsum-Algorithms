@@ -18,11 +18,12 @@ defmodule Topology do
 
     if actorNumber == 0 do
       [String.to_atom("actor_#{1}")]
-    end
-    if actorNumber == totalLength-1 do
-      [String.to_atom("actor_#{totalLength - 2}")]
     else
-      [String.to_atom("actor_#{actorNumber - 1}"),String.to_atom("actor_#{actorNumber + 1}")]
+      if actorNumber == totalLength-1 do
+        [String.to_atom("actor_#{totalLength - 2}")]
+      else
+        [String.to_atom("actor_#{actorNumber - 1}"),String.to_atom("actor_#{actorNumber + 1}")]
+      end
     end
   end
 

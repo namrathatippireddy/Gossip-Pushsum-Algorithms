@@ -8,7 +8,7 @@ defmodule PushsumActor do
        "w" => 1,
        "diff1" => 1,
        "diff2" => 1,
-       "diff3" => 1,
+       "diff3" => Enum.at(pushsum_state, 0),
        "triggered" => Enum.at(pushsum_state, 1),
        "neighbors" => [],
        # this is to carry actor name in the state to persist, might replace self()
@@ -31,6 +31,7 @@ defmodule PushsumActor do
     {:ok, w} = Map.fetch(state, "w")
     {:ok, triggered} = Map.fetch(state, "triggered")
     {:ok, neighbors} = Map.fetch(state, "neighbors")
+    {:ok, watcher_pid} = Map.fetch(state, "watcher_pid")
 
     state = Map.put(state, "s", s / 2)
     state = Map.put(state, "w", w / 2)
@@ -38,7 +39,10 @@ defmodule PushsumActor do
     if length(neighbors) > 0 do
       # because of self() and the name conflict, it messes up here
       {:ok, actor_name} = Map.fetch(state, "name")
+      #IO.inspect("Transmitting from #{actor_name}")
       _ = GenServer.cast(Enum.random(neighbors), {:receive_values, s / 2, w / 2, actor_name})
+    else
+      GenServer.cast(watcher_pid, {:algo_end})
     end
 
     {:noreply, state}
@@ -56,19 +60,25 @@ defmodule PushsumActor do
     {:ok, actor_name} = Map.fetch(state, "name")
 
     {:ok, neighbors} = Map.fetch(state, "neighbors")
-    GenServer.cast(Enum.random(neighbors), {:transmit_values})
+    #IO.inspect("recv from #{sender} in actor #{actor_name}")
 
+    if length(neighbors) > 0 do
+      next = Enum.random(neighbors)
+      #IO.inspect(" send to next = #{next}")
+      GenServer.cast(next, {:receive_values, s_new / 2, w_new / 2, actor_name})
+    else
+      GenServer.cast(watcher_pid, {:algo_end})
+    end
+    #IO.inspect("#{diff1} #{diff2} #{diff3}")
     # if three consecutive differences are less than 10 power -10 terminate the actor
     if diff1 < :math.pow(10, -10) && diff2 < :math.pow(10, -10) && diff3 < :math.pow(10, -10) do
-      # because of self() and the name conflict, it messes up here
-      # IO.puts("Inside termination condition")
-      # {:ok, actor_name} = Map.fetch(state, "name")
-      # _ = GenServer.cast(sender, {:terminate_neighbor, actor_name})
+
       Enum.each(neighbors, fn each_neighbor ->
         GenServer.cast(each_neighbor, {:terminate_neighbor, actor_name})
       end)
 
       GenServer.cast(watcher_pid, {:increment_deaths})
+      #IO.inspect("in here")
 
       {:noreply, state}
     else
@@ -81,13 +91,13 @@ defmodule PushsumActor do
       cur_ratio = s_cur / w_cur
       new_ratio = s_new / w_new
       diff3 = abs(cur_ratio - new_ratio)
-
+      #IO.inspect("current ratio #{cur_ratio}")
       # To keep half the value and send the other half
       # s_new = s_new / 2
       # w_new = w_new / 2
 
-      state = Map.put(state, "s", s_new)
-      state = Map.put(state, "w", w_new)
+      state = Map.put(state, "s", s_new/2)
+      state = Map.put(state, "w", w_new/2)
       state = Map.put(state, "diff1", diff1)
       state = Map.put(state, "diff2", diff2)
       state = Map.put(state, "diff3", diff3)
