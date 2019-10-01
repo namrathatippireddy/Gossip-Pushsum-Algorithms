@@ -55,7 +55,7 @@ defmodule PushsumActor do
 
     {:ok, neighbors} = Map.fetch(state, "neighbors")
     len = length(neighbors)
-    IO.inspect("list of neighbors length #{len} in actor #{actor_name}")
+    #IO.inspect("list of neighbors length #{len} in actor #{actor_name}")
 
     if length(neighbors) > 0 do
       next = Enum.random(neighbors)

@@ -27,12 +27,7 @@ defmodule Topology do
     end
   end
 
-  '''
-  def rand2D(actorList,curActor) do
-       #adjMatrix =
-       _
-  end
-  '''
+
   def get_3Dtorus_neighbours(actorList) do
     totalLength = length(actorList)
     n = Utils.findCubeRoot(1,totalLength)
