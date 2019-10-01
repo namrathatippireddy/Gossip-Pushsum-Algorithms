@@ -23,7 +23,7 @@ defmodule Watcher do
     if (death_count/num_nodes)*100 > top_sparse[topology] do
       send(main_pid, {:algo_end, ""})
     end
-
+    #IO.inspect("#{death_count}  actors dead")
     # if (death_count/num_nodes)*100 > top_sparse[topology] do
     # if death_count == num_nodes do
     #
@@ -33,12 +33,9 @@ defmodule Watcher do
     state = Map.put(state, "death_count", death_count + 1)
 
     {:noreply, state}
-    # watcherTodo: if numnodes==deathcount then
-    # send(main_pid, {:gossip_end, ""})
-
-    # cast-in-call:
-    # def handle_call({:chechterminated}, {counter}):
-    # start_time = :os.system_time(:millisecond)
-    # start_gossiping(map_of_neighbors, node_list, true)
+  end
+  def handle_cast({:algo_end}, state) do
+    {:ok, main_pid} = Map.fetch(state, "main_pid")
+    send(main_pid, {:algo_end, ""})
   end
 end

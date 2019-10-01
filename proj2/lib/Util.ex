@@ -29,7 +29,7 @@ defmodule Utils do
         "rand2D" ->
           num_nodes
         "3Dtorus" ->
-          num_nodes = get_next_cube(1,num_nodes)
+          get_next_cube(1,num_nodes)
         "honeycomb" ->
            num_nodes
         "randhoneycomb" ->
@@ -49,7 +49,7 @@ defmodule Utils do
 
   def findCubeRoot(i,numNodes) do
     test = ((i*i*i) == numNodes)
-    IO.inspect("#{i} #{test} #{numNodes}")
+    #IO.inspect("#{i} #{test} #{numNodes}")
     if test do
       i
     else

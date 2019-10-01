@@ -35,7 +35,7 @@ defmodule GossipActor do
     end
 
     # add sleep
-    Process.sleep(1)
+    Process.sleep(100)
     GenServer.cast(actor_name, {:transmit_rumor, message})
     {:noreply, state}
   end

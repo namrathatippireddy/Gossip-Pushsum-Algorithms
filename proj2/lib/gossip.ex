@@ -22,7 +22,7 @@ defmodule Gossip do
     num_nodes = Utils.node_correction(num_nodes, topology)
 
     node_list =
-      Enum.map(1..num_nodes, fn n ->
+      Enum.map(0..num_nodes - 1, fn n ->
         actor = "actor_" <> to_string(n)
         String.to_atom(actor)
       end)
@@ -112,59 +112,13 @@ defmodule Gossip do
         false
       end
 
-    # Lets see if this for loop is not need and actors do stuff by themseleves
-    # only one of the above or below block will be uncommented
-    # for {actor_name, neighbors} <- map_of_neighbors do
-    #   GenServer.cast(actor_name, {:transmit_rumor, "rumor"})
-    # end
-
-    # live_actors = get_alive_actors(node_list)
-    # # IO.inspect(live_actors)
-    #
-    # if length(live_actors) > 1 do
-    #   # Now map_of_neighbors should only have the entries of the alive actors
-    #   map_of_neighbors =
-    #     Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
-    #
-    #   # (this is needed if we were to eleminate the forloop above )
-    #   first_call = false
-    #   start_gossiping(map_of_neighbors, live_actors, first_call)
-    # else
-    #   IO.puts("Gosipping ends as all the actors are terminated")
-    # end
   end
 
-  # def get_alive_actors(node_list) do
-  #   # Returns all the actors whose count is less than 10 and has atleast one neighbor
-  #   alive_actors =
-  #     Enum.map(node_list, fn act ->
-  #       {:ok, neighbors_list} = GenServer.call(act, {:get_neighbors})
-  #       neighbors_count = length(neighbors_list)
-  #       {:ok, count} = GenServer.call(act, {:get_count})
-  #
-  #       # Process.alive isn't working with the names
-  #       if Process.alive?(Process.whereis(act)) && count < 10 && neighbors_count > 0 do
-  #         # if count < 10 && neighbors_count > 0 do
-  #         act
-  #       end
-  #     end)
-  #
-  #   # IO.inspect alive_actors
-  #   List.delete(Enum.uniq(alive_actors), nil)
-  # end
 
   def spawn_pushsum_actors(node_list, watcher_pid) do
     # random_initial_node = Enum.random(node_list)
     #
     Enum.map(node_list, fn n ->
-      #   if n == random_initial_node do
-      #     # Make sure the first element of the array passed "S" value is a number but not atom
-      #     # Here is how to cast Atom back to integer
-      #     [_, actorNumber] = String.split(Atom.to_string(n), "_")
-      #     s_integer = String.to_integer(actorNumber)
-      #     {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 1, n], name: n)
-      #     actor
-      #   else
       [_, actorNumber] = String.split(Atom.to_string(n), "_")
       s_integer = String.to_integer(actorNumber)
       {:ok, actor} = GenServer.start_link(PushsumActor, [s_integer, 0, n, watcher_pid], name: n)
@@ -193,38 +147,6 @@ defmodule Gossip do
         false
       end
 
-    # live_actors = get_alive_pushsum_actors(node_list)
-    #
-    # if length(live_actors) > 1 do
-    #   map_of_neighbors =
-    #     Enum.filter(map_of_neighbors, fn {actor, _} -> Enum.member?(live_actors, actor) end)
-    #
-    #   first_call = false
-    #   start_pushsum(live_actors, map_of_neighbors, first_call)
-    # else
-    #   IO.puts("Pushsum ends all actors are terminated")
-    # end
   end
 
-  # def get_alive_pushsum_actors(node_list) do
-  #   alive_actors =
-  #     Enum.map(node_list, fn act ->
-  #       {:ok, neighbors_list} = GenServer.call(act, {:get_neighbors})
-  #       neighbors_count = length(neighbors_list)
-  #       # {:ok, diff_list} = GenServer.call(act, {:get_diff})
-  #       # diff1 = Enum.at(diff_list, 0)
-  #       # diff2 = Enum.at(diff_list, 1)
-  #       # diff3 = Enum.at(diff_list, 2)
-  #       alive = GenServer.call(act, {:check_alive})
-  #       # IO.puts("Alive? #{alive}")
-  #       # donno if Process.alive takes pid or can work on something other than pid
-  #       # if Process.alive?(act) && neighbors_count > 0 && alive do
-  #       if neighbors_count > 0 && alive do
-  #         act
-  #       end
-  #     end)
-  #
-  #   # IO.inspect alive_actors
-  #   List.delete(Enum.uniq(alive_actors), nil)
-  # end
 end
