@@ -13,10 +13,6 @@ defmodule GossipActor do
      }}
   end
 
-  def handle_call({:get_neighbors}, _from, state) do
-    {:reply, Map.fetch(state, "neighbors"), state}
-  end
-
   def handle_cast({:set_neighbors, neighbors}, state) do
     # IO.inspect(neighbors)
     {:noreply, Map.put(state, "neighbors", neighbors)}
@@ -35,7 +31,7 @@ defmodule GossipActor do
     end
 
     # add sleep
-    Process.sleep(100)
+    Process.sleep(1)
     GenServer.cast(actor_name, {:transmit_rumor, message})
     {:noreply, state}
   end
@@ -49,7 +45,6 @@ defmodule GossipActor do
     if count > 10 do
       #If count > 10 ask neighbor nodes to remove this genServer from their neighbor list
       Enum.each(neighbors, fn each_neighbor ->
-        # IO.inspect("#{actor_name} terminating #{each_neighbor}")
         _ = GenServer.cast(each_neighbor, {:terminate_neighbor, actor_name})
       end)
 
@@ -82,22 +77,6 @@ defmodule GossipActor do
     Map.put(state, "neighbors", List.delete(neighbors, neighbor))
     # IO.inspect("new state #{state}")
     {:noreply, state}
-  end
-
-  def handle_call({:get_count}, _from, state) do
-    {:reply, Map.fetch(state, "count"), state}
-  end
-
-  def handle_call({:get_message}, _from, state) do
-    {:reply, Map.fetch(state, "message"), state}
-  end
-
-  def handle_call({:get_neighbors_count}, _from, state) do
-    {:reply, Map.fetch(state, "neighbors"), state}
-  end
-
-  def handle_call({:set_message}, _from, state) do
-    {:reply, Map.put(state, "message", state)}
   end
 
 end

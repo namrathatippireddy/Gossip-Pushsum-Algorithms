@@ -4,17 +4,14 @@ defmodule Utils do
     case topology do
       "line" ->
         Topology.line(actors)
-
       "full" ->
         Topology.get_full_neighbors(actors)
       "rand2D" ->
         Topology.get_rand2Dneighbors(actors)
       "3Dtorus" ->
         Topology.get_3Dtorus_neighbours(actors)
-
       "honeycomb" ->
         Topology.get_honeycomb_neighbours(actors)
-
       "randhoneycomb" ->
         Topology.get_randhoneycomb_neighbours(actors)
     end
@@ -56,4 +53,5 @@ defmodule Utils do
       findCubeRoot(i+1,numNodes)
     end
   end
+
 end
