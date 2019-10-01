@@ -38,13 +38,12 @@ defmodule Topology do
     n = Utils.findCubeRoot(1,totalLength)
 
     Enum.reduce(actorList, %{}, fn x, acc ->
-      Map.put(acc, x, torus3D_neighbor(actorList,x,n))
+      Map.put(acc, x, torus3D_neighbor(x,n))
     end)
   end
 
-  def torus3D_neighbor(actorList,curActor,n) do
+  def torus3D_neighbor(curActor,n) do
 
-    totalLength = length(actorList)
     [_ , actorNumber] = String.split(Atom.to_string(curActor),"_")
     actorNumber = String.to_integer(actorNumber)
 
@@ -208,14 +207,14 @@ defmodule Topology do
 
 
     neighbors = Enum.filter(actors_with_cood, fn actor_with_cood ->
-      {_,cood} = actor_with_cood
+      {actor,cood} = actor_with_cood
       [x,y] = cood
 
       [curx,cury] = actors_with_cood[curActor]
 
       distance = :math.sqrt(abs((x-curx * x-curx) + (y-cury) * (y-cury)))
 
-      if  distance <= 0.1 do
+      if  distance <= 0.1 && actor != curActor do
         true
       else
         false
